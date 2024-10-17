@@ -6,6 +6,8 @@
 #include <QImage>
 #include <QPushButton>
 #include <QFileDialog>
+#include <QVBoxLayout>
+#include <QMessageBox>
 #include <opencv2/opencv.hpp>
 
 QT_BEGIN_NAMESPACE
@@ -21,6 +23,7 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
     void showEvent(QShowEvent *event);
+    cv::Mat src;
 
 private slots:
     void button_file_choose_clicked();
@@ -28,12 +31,9 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
-    cv::Mat image;
-    cv::Mat gray;
+    QPushButton *rgb2gray;
+    QPushButton *file_choose;
+
     void displayImage();
-
-    QPushButton *pushButton_file_choose;
-    QPushButton *pushButton_rgb2gray;
-
 };
 #endif // MAINWINDOW_H

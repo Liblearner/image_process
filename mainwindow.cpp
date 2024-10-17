@@ -1,18 +1,19 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-
+using namespace cv;
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+
+    connect(ui->rgb2gray, SIGNAL(clicked()),this,SLOT(button_gray_Clicked()));
+    connect(ui->file_choose, SIGNAL(clicked()),this,SLOT(button_file_choose_clicked()));
+
     QShowEvent *event;
     showEvent(event);
-    pushButton_file_choose = new QPushButton("file_choose",this);
-    pushButton_rgb2gray = new QPushButton("rgb2gray",this);
-    connect(pushButton_file_choose, SIGNAL(clicked()), this, SLOT(button_file_choose_clicked()));
-    connect(pushButton_rgb2gray, SIGNAL(clicked()), this, SLOT(button_gray_Clicked()));
+
 }
 
 MainWindow::~MainWindow()
@@ -21,7 +22,7 @@ MainWindow::~MainWindow()
 }
 
 void MainWindow::displayImage(){
-    cv::Mat src = cv::imread("E:\\Project\\qt_prj\\cv_gui\\cv_gui\\image\\hero.jpg");
+    src = cv::imread("E:\\Project\\qt_prj\\cv_gui\\cv_gui\\image\\hero.jpg");
     if (src.empty()) {
         qDebug() << "Failed to load image!";
         return;
@@ -67,42 +68,53 @@ void MainWindow::showEvent(QShowEvent *event) {
 }
 
 using namespace cv;
+
 void MainWindow::button_file_choose_clicked()//选择文件
 {
-    // QString testFileName = QFileDialog::getOpenFileName(this,tr(""),"../../../../open_image","files(*)");
-    // image = imread(testFileName.toStdString());
-    // cvtColor(image, grayImg, CV_BGR2GRAY);
+    qDebug() << "file_choose button clicked!";
+    QString testFileName = QFileDialog::getOpenFileName(this,tr(""),"../../../../open_image","files(*)");
 
-    // Mat temp;
-    // QImage Qtemp;
-    // cvtColor(image, temp, COLOR_BGR2RGB);//BGR convert to RGB
-    // Qtemp = QImage((const unsigned char*)(temp.data), temp.cols, temp.rows, temp.step, QImage::Format_RGB888);
+    src = imread(testFileName.toStdString());
+    // cvtColor(src, grayImg, CV_BGR2GRAY);
 
-    // ui->image->setPixmap(QPixmap::fromImage(Qtemp));
-    // Qtemp = Qtemp.scaled(250, 250, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-    // ui->image->setScaledContents(true);
-    // ui->image->resize(Qtemp.size());
-    // ui->image->show();
+    Mat resized;
+    int labelWidth  = ui->image->width();
+    int labelHeight  = ui->image->height();
+    double aspectRatio = static_cast<double>(src.cols) / src.rows;
+    int newWidth = labelWidth ;
+    int newHeight = static_cast<int>(labelWidth  / aspectRatio);
+
+    if (newHeight > labelHeight ) {
+        newHeight = labelHeight ;
+        newWidth = static_cast<int>(labelHeight  * aspectRatio);
+    }
+
+    cv::resize(src, resized, cv::Size(newWidth, newHeight));
+
+    qDebug() << "Resized Image Size:" << resized.cols << "x" << resized.rows;
+
+    QImage qimg(resized.data, resized.cols, resized.rows, resized.step, QImage::Format_RGB888);
+
+    qimg = qimg.rgbSwapped();
+    QPixmap pixmap = QPixmap::fromImage(qimg);
+    ui->image->setPixmap(pixmap);  // 在QLabel上显示图像
+    ui->image->setAlignment(Qt::AlignCenter);  // 使图像居中
 
 }
 
 void MainWindow::button_gray_Clicked()//BGR转灰度
 {
-    // //Mat gray;
-    // grayImg.create(srcImg.rows, srcImg.cols, CV_8UC1);
-    // QImage Qtemp;
+    qDebug() << "rgb2gray button clicked!";
+    cv::Mat src_gray;
+    src_gray.create(src.rows, src.cols, CV_8UC1);
+    cvtColor(src,src_gray,COLOR_RGB2GRAY);
+    QImage Qtemp;
+    Qtemp = QImage((const uchar*)(src_gray.data), src_gray.cols, src_gray.rows, src_gray.cols*src_gray.channels(), QImage::Format_Indexed8);
+    ui->image->setPixmap(QPixmap::fromImage(Qtemp));
+    Qtemp = Qtemp.scaled(600, 400, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    ui->image->setScaledContents(true);
+    ui->image->setAlignment(Qt::AlignCenter);  // 使图像居中
+    ui->image->resize(Qtemp.size());
+    ui->image->show();
 
-    // for(int i = 0 ; i < srcImg.rows ; i++)
-    //     for(int j = 0 ; j < srcImg.cols ; j++){
-    //         grayImg.at<uchar>(i,j) = (int)0.11 * srcImg.at<Vec3b>(i,j)[0]
-    //                                   + 0.59 * srcImg.at<Vec3b>(i,j)[1]
-    //                                   + 0.3 * srcImg.at<Vec3b>(i,j)[2];
-    //     }
-
-    // Qtemp = QImage((const uchar*)(grayImg.data), grayImg.cols, grayImg.rows, grayImg.cols*grayImg.channels(), QImage::Format_Indexed8);
-    // ui->image->setPixmap(QPixmap::fromImage(Qtemp));
-    // Qtemp = Qtemp.scaled(250, 250, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-    // ui->image->setScaledContents(true);
-    // ui->image->resize(Qtemp.size());
-    // ui->image->show();
 }
